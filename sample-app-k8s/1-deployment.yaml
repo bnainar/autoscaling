@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sample-app
+  namespace: sparrowdesk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: sample-app
+  template:
+    metadata:
+      labels:
+        app: sample-app
+    spec:
+      # remove hostNetwork
+      hostNetwork: true 
+      containers:
+        - name: sample-app
+          image: bnainar/sample-app:latest
+          ports:
+            - containerPort: 3002
+          resources:
+            requests:
+              memory: "500Mi"
+              cpu: "500m"
+            limits:
+              memory: "500Mi"
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 3002
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3002
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          envFrom:
+          - configMapRef:
+              name: sample-app-config
+  strategy:
+    type: RollingUpdate

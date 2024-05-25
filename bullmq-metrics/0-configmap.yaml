@@ -1,0 +1,29 @@
+# apiVersion: v1
+# kind: ConfigMap
+# metadata:
+#   name: bullmq-metrics-config
+#   namespace: sparrowdesk
+# data:
+#   QUEUE_NAMES: "AccountLimitCacheToDBCron,AccountLimitSync,AccountMigration,Affliate,AppNestEvents,Billing,Blink,BlinkResync,CaseSync,Cerebrum,CerebrumCron,Cleaner,CleanerCron,CloneClassicToNps,Contact,ContactImport,ContactSync,Custify,CustifyCron,Dashboard,DashboardElasticResponseSync,DashboardResponseSync,Delayed,DelayedCron,Domain,Download,DownloadCron,DropOff,EMP360Reminder,EMP360ReminderCron,EUICacheGenerator,Elastic,ElasticGreenIndexSync,ElasticMigration,ElasticMigrationDispatcher,ElasticMigrationSync,ElasticTriggers,Email,EmailShare,Emp360Report,GoogleSheet,Hierarchy,HierarchyImport,HubSpot,HubSpotCron,Invite,KeyDriver,KeyDriverCron,LLMCostTracker,Log,MailerEvent,Migration,NPSDelayedCron,NPSRelativeScheduleCron,NPSScheduleCron,NpsDelayed,NpsRelativeSchedule,NpsReminder,NpsReminderCron,NpsSchedule,NpsTrigger,OfflineShare,Onboarding,OverageSubscription,OverviewElasticProcessWorker,OverviewElasticSync,ParialSubmissionCorn,PartialSubmission,PartialSubmissionSync,PaymentAnalyticsCron,Phishing,PowerBI,ProcessKeyDriver,Referral,Reminder,ReminderCron,Reports,ReputationAlertsWorker,ResponseEmail,ResponseImport,RuleEngine,RuleEngineProcess,SMS,SMSDeliveryPoller,SSL,Schedule,ScheduleCron,Scheduler,SchedulerCron,Sendgrid,Sentiment,SentimentV3ElasticSync,SentimentV3Migration,Sentiment_v2,Sentiment_v3,SetChurnCron,Share,Standup,StandupCorn,Submission,SubmissionContactPropertiesSync,SubmissionMigration,SubmissionResync,SubmissionSync,SubmissionSyncPoller,SubmissionSyncPollerCron,Subscription,SubscriptionCancellationCron,SuperAdmin,Survey,ThankYou,TicketDueDateProcess,TicketImport,TicketManagementActivityLogs,TopicsExtraction,TopicsExtractionElasticSync,TopicsExtractionSanity,TwilioDelivery,Visit,Vitally,VitallyCron,Webhook,WhatsAppDelivery,Whatsapp,WidgetCacheGenerator,accountTrialFeatureDelete,inboundEmail,translation"
+#   REDIS_PREFIX: "salesparrow-bullmq"
+#   REDIS_NODES: '[{"host":"ss-staging-redis-cluster.fbh2lo.clustercfg.use1.cache.amazonaws.com","port":"6379"}]'
+  # BULLMQ_PREFIX: "sparrowdesk-bullmq"
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bullmq-metrics-config
+  namespace: sparrowdesk
+data:
+  QUEUE_NAMES: "AccountLimitCacheToDBCron,AccountLimitSync,AccountMigration,Affliate,AppNestEvents,Billing,Blink,BlinkResync,CaseSync,Cerebrum,CerebrumCron,Cleaner,CleanerCron,CloneClassicToNps,Contact,ContactImport,ContactSync,Custify,CustifyCron,Dashboard,DashboardElasticResponseSync,DashboardResponseSync,Delayed,DelayedCron,Domain,Download,DownloadCron,DropOff,EMP360Reminder,EMP360ReminderCron,EUICacheGenerator,Elastic,ElasticGreenIndexSync,ElasticMigration,ElasticMigrationDispatcher,ElasticMigrationSync,ElasticTriggers,Email,EmailShare,Emp360Report,GoogleSheet,Hierarchy,HierarchyImport,HubSpot,HubSpotCron,Invite,KeyDriver,KeyDriverCron,LLMCostTracker,Log,MailerEvent,Migration,NPSDelayedCron,NPSRelativeScheduleCron,NPSScheduleCron,NpsDelayed,NpsRelativeSchedule,NpsReminder,NpsReminderCron,NpsSchedule,NpsTrigger,OfflineShare,Onboarding,OverageSubscription,OverviewElasticProcessWorker,OverviewElasticSync,ParialSubmissionCorn,PartialSubmission,PartialSubmissionSync,PaymentAnalyticsCron,Phishing,PowerBI,ProcessKeyDriver,Referral,Reminder,ReminderCron,Reports,ReputationAlertsWorker,ResponseEmail,ResponseImport,RuleEngine,RuleEngineProcess,SMS,SMSDeliveryPoller,SSL,Schedule,ScheduleCron,Scheduler,SchedulerCron,Sendgrid,Sentiment,SentimentV3ElasticSync,SentimentV3Migration,Sentiment_v2,Sentiment_v3,SetChurnCron,Share,Standup,StandupCorn,Submission,SubmissionContactPropertiesSync,SubmissionMigration,SubmissionResync,SubmissionSync,SubmissionSyncPoller,SubmissionSyncPollerCron,Subscription,SubscriptionCancellationCron,SuperAdmin,Survey,ThankYou,TicketDueDateProcess,TicketImport,TicketManagementActivityLogs,TopicsExtraction,TopicsExtractionElasticSync,TopicsExtractionSanity,TwilioDelivery,Visit,Vitally,VitallyCron,Webhook,WhatsAppDelivery,Whatsapp,WidgetCacheGenerator,accountTrialFeatureDelete,inboundEmail,translation"
+  REDIS_PREFIX: "salesparrow-bullmq"
+  REDIS_NODES: '[{ "host": "192.168.29.165", "port": "6375"}, { "host": "192.168.29.165", "port": "6380"}, { "host": "192.168.29.165", "port": "6381" }]'
+  BULLMQ_PREFIX: "bullmq"
+  LAPTOP: 192.168.29.165
+---
+# apiVersion: v1
+# kind: Service
+# metadata:
+#   name: laptop-service
+# spec:
+#   type: ExternalName
+#   externalName: 127.0.0.1
