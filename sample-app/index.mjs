@@ -74,7 +74,6 @@ const app = fastify({ logger: true });
 
 app.get("/api/bullmq/:queueName/concurrency", async (request, res) => {
   const { queueName } = request.params;
-  console.log(workerInstances[queueName][0].opts)
   let ans = 0;
   workerInstances[queueName].forEach(curr => ans += curr.opts.concurrency)
   res.send(ans);
@@ -122,6 +121,13 @@ app.get("/status", (_, res) => {
 
 app.get("/ready", (_, res) => {
   connection.status === "ready" ? res.code(200).send() : res.code(500).send();
+});
+
+app.get("/api/bullmq/:queueName/status", async (request, res) => {
+  const { queueName } = request.params;
+  const q = queues[queueName];
+  const x = await Promise.all([q.getWaitingCount(), q.getActiveCount(), q.getWorkersCount()])
+  res.send(x);
 });
 
 await app.listen({ host: HOST, port: PORT });
