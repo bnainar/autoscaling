@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: custom-scaler
+  namespace: sparrowdesk
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: custom-scaler
+  template:
+    metadata:
+      labels:
+        app: custom-scaler
+    spec:
+      containers:
+        - name: custom-scaler
+          image: bnainar/custom-scaler:latest
+          ports:
+            - containerPort: 3003
+          resources:
+            requests:
+              memory: "300Mi"
+              cpu: "500m"
+            limits:
+              memory: "300Mi"
+          livenessProbe:
+            httpGet:
+              path: /status
+              port: 3003
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3003
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          # envFrom:
+          # - configMapRef:
+          #     name: custom-scaler-config
+  strategy:
+    type: RollingUpdate
