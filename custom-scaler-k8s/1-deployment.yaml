@@ -36,8 +36,15 @@ spec:
               port: 3003
             initialDelaySeconds: 10
             periodSeconds: 10
-          envFrom:
-          - configMapRef:
-              name: custom-scaler-config
+          volumeMounts:
+          - name: config-volume
+            mountPath: /app/config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: custom-scaler-config
+          items:
+          - key: config
+            path: staging.json
   strategy:
     type: RollingUpdate

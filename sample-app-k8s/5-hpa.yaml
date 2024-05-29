@@ -5,9 +5,6 @@ metadata:
   name: sample-app-hpa
   namespace: sparrowdesk
 spec:
-  selector:
-    matchLabels:
-      app: sample-app-hpa
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment

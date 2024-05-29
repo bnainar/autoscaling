@@ -1,30 +1,34 @@
 import fastify from "fastify";
 import process from "node:process";
-import fs from "node:fs/promises";
 import k8s from "@kubernetes/client-node";
 import axios from "axios";
+import config from "config";
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
-
-const k8sApi = kc.makeApiClient(k8s.CoreV1Api);
 const metricsClient = new k8s.Metrics(kc);
 
-async function fetchPods(namespace, queueName) {
-  const podsRes = await k8sApi.listNamespacedPod(
-    namespace,
+const k8sCoreApiClient = kc.makeApiClient(k8s.CoreV1Api);
+
+/**
+ * @param {string} queueName
+ * @returns {Promise<{pods: (k8s.V1PodStatus | undefined)[], globalConcurrency: number}>}
+ */
+async function fetchPods(queueName) {
+  const podsRes = await k8sCoreApiClient.listNamespacedPod(
+    config.get("K8S_NAMESPACE"),
     undefined,
     undefined,
     undefined,
     undefined,
-    "app=" + process.env.TARGET_APP_LABEL
+    "app=" + config.get("TARGET_APP_LABEL")
   );
 
   if (!podsRes.body.items.length) {
     return res.status(404).send({ error: "No pods found" });
   }
 
-  let total = 0;
+  let globalConcurrency = 0;
   const pods = await Promise.all(
     podsRes.body.items.map(async (item) => {
       const y = item.status;
@@ -41,10 +45,12 @@ async function fetchPods(namespace, queueName) {
       try {
         console.log(`Connecting to pod ${item.metadata.name} at ${y.podIP}:`);
         const { data } = await axios.get(
-          `http://${y.podIP}:3002/api/bullmq/${queueName}/concurrency`
+          `http://${y.podIP}:${config.get(
+            "targetPodPort"
+          )}/api/bullmq/${queueName}/concurrency`
         );
         y.workerConcurrency = data;
-        total += Number(data);
+        globalConcurrency += Number(data);
       } catch (e) {
         console.log(
           `Error connecting to pod ${item.metadata.name} at ${y.podIP}:`,
@@ -54,10 +60,8 @@ async function fetchPods(namespace, queueName) {
       return y;
     })
   );
-  return { pods, total };
+  return { pods, globalConcurrency };
 }
-const HOST = process.env.HOST ?? "0.0.0.0";
-const PORT = Number.parseInt(process.env.PORT ?? 3003);
 
 const app = fastify({ logger: true });
 
@@ -69,37 +73,39 @@ app.get("/ready", (_, res) => {
   res.code(200).send();
 });
 
-app.get("/api/hpa", async (_, res) => {
+app.get("/api/hpa/:num", async (request, res) => {
+  const num = Number(request.params.num);
   console.log("mamma mia");
-  const namespace = process.env.K8S_NAMESPACE;
+  const namespace = config.get("K8S_NAMESPACE");
   const k8sAutoScalingClient = kc.makeApiClient(k8s.AutoscalingV2Api);
 
   try {
     const hpaList =
-      await k8sAutoScalingClient.listNamespacedHorizontalPodAutoscaler(
+      await k8sAutoScalingClient.readNamespacedHorizontalPodAutoscaler(
+        config.get("HPA-name"),
         namespace
       );
-    const targetHPA = hpaList.body.items[0];
-    const maxHPA = Number(process.env.MAX_HPA);
+    const targetHPA = hpaList.body;
+    const maxHPA = config.get("MAX_HPA");
     if (targetHPA.spec.maxReplicas >= maxHPA)
       return res
         .status(500)
-        .send("reached max HPA" + targetHPA.spec.maxReplicas);
-    targetHPA.spec.maxReplicas += 1;
+        .send("reached max HPA " + targetHPA.spec.maxReplicas);
+
+    targetHPA.spec.maxReplicas = num;
     try {
-      const updatedHPA = await k8sApi.replaceNamespacedHorizontalPodAutoscaler(
-        targetHPA.metadata.name,
-        namespace,
-        targetHPA
-      );
-      console.log("Updated HPA:", updatedHPA.body);
-      res.send(updatedHPA.body); // Send the updated HPA as the response
+      const updatedHPA =
+        await k8sAutoScalingClient.replaceNamespacedHorizontalPodAutoscaler(
+          targetHPA.metadata.name,
+          namespace,
+          targetHPA
+        );
+      console.log("Updated HPA");
+      return res.send(updatedHPA.body);
     } catch (error) {
       console.error("Error updating HPA:", error);
-      res.status(500).send({ error: "Failed to update HPA" });
+      return res.status(500).send({ error: "Failed to update HPA" });
     }
-
-    res.send(hpaList.body);
   } catch (error) {
     console.error("Error fetching HPA:", error);
     res.status(500).send({ error: "Failed to fetch HPA" });
@@ -110,14 +116,14 @@ app.get("/pods/:queueName", async (request, res) => {
   const { queueName } = request.params;
 
   try {
-    const { total, pods } = await fetchPods(
-      process.env.K8S_NAMESPACE,
-      queueName
-    );
-    let podsColumns;
+    const { globalConcurrency, pods } = await fetchPods(queueName);
     try {
-      const topPodsRes1 = await k8s.topPods(k8sApi, metricsClient, name);
-      podsColumns = topPodsRes1.map((pod) => {
+      const topPodsRes1 = await k8s.topPods(
+        k8sCoreApiClient,
+        metricsClient,
+        config.get("K8S_NAMESPACE")
+      );
+      const podsColumns = topPodsRes1.map((pod) => {
         return {
           POD: pod.Pod.metadata.name,
           "CPU(cores)": pod.CPU.CurrentUsage.toString(),
@@ -125,51 +131,62 @@ app.get("/pods/:queueName", async (request, res) => {
         };
       });
       console.table(podsColumns);
+      return res.send({ pods, podsColumns, globalConcurrency });
     } catch (e) {
       console.log("failed to connect to metrics server", e);
+      return res.code(500).send("failed to connect to metrics server");
     }
-    res.send({ pods, podsColumns, total });
   } catch (error) {
     console.error("Error fetching pods:", error);
-    res.status(500).send({ error: "Failed to fetch pods" });
+    res.status(500).send("Failed to fetch pods");
   }
 });
 
-const queueLimits = JSON.parse(process.env.QUEUE_LIMITS);
+const queueLimits = config.get("QUEUE_LIMITS");
 
 app.post("/concurrency/:queueName", async (request, res) => {
   const { queueName } = request.params;
   const { target } = request.body;
-  
-  
-  const { pods, total } = await fetchPods(process.env.K8S_NAMESPACE, queueName);
+
+  if (!queueLimits[queueLimits])
+    return res.code(404).send("Config not set for the desired queue");
+
+  const { pods, globalConcurrency } = await fetchPods(queueName);
 
   const numPods = pods.length;
 
   if (numPods === 0) {
     return res.status(500).send("No pods available");
   }
-  let newConc;
-  if(target == -1) {
-    newConc = total - queueLimits[queueName].decStep;
-  }
-  else {
-    newConc = total + queueLimits[queueName].incStep;
-  }
 
-  const baseConc = Math.floor(newConc / numPods);
-  let remainder = newConc % numPods;
-  console.log({newConc, baseConc, remainder})
-  if (newConc > queueLimits[queueName].globalMax)
-    return res.code(500).send("Global max reached");
+  let newGlobalConcurrency;
+  if (target == -1) {
+    newGlobalConcurrency = globalConcurrency - queueLimits[queueName].decStep;
+  } else if (target == 1) {
+    newGlobalConcurrency = globalConcurrency + queueLimits[queueName].incStep;
+  } else return res.code(400).send("invalid target");
 
-  if (baseConc >= queueLimits[queueName].podMax)
-    return res.code(500).send("Pod max reached");
+  const basePodConcurrency = Math.floor(newGlobalConcurrency / numPods);
+  let remainder = newGlobalConcurrency % numPods;
+  console.log({ newGlobalConcurrency, basePodConcurrency, remainder });
 
+  if (newGlobalConcurrency > queueLimits[queueName].globalMax)
+    return res.code(500).send("Global max reached " + newGlobalConcurrency);
+
+  if (basePodConcurrency >= queueLimits[queueName].podMax)
+    return res.code(500).send("Pod max reached " + basePodConcurrency);
+
+  /**
+   * @param {k8s.V1PodStatus | undefined} pod
+   * @param {1 | -1} adjustment
+   * @returns {Promise<boolean>}
+   */
   const adjustConcurrency = async (pod, adjustment) => {
     try {
       const { data } = await axios.post(
-        `http://${pod.podIP}:3002/api/bullmq/${queueName}/concurrency`,
+        `http://${pod.podIP}:${config.get(
+          "targetPodPort"
+        )}/api/bullmq/${queueName}/concurrency`,
         { target: adjustment }
       );
       console.log(`adjusted ${pod.name} concurrency by ${adjustment}`, data);
@@ -184,13 +201,13 @@ app.post("/concurrency/:queueName", async (request, res) => {
   };
 
   const promises = pods.map(async (pod) => {
-    let concurrency = baseConc;
+    let newPodConcurrency = basePodConcurrency;
     if (remainder > 0) {
-      concurrency++;
+      newPodConcurrency++;
       remainder--;
     }
-    const oldConc = pod.workerConcurrency;
-    let adjustment = concurrency - oldConc;
+    const previousPodConcurrency = pod.workerConcurrency;
+    let adjustment = newPodConcurrency - previousPodConcurrency;
 
     while (adjustment !== 0) {
       const step = adjustment > 0 ? 1 : -1;
@@ -206,5 +223,8 @@ app.post("/concurrency/:queueName", async (request, res) => {
 
   res.send("ok");
 });
+
+const HOST = process.env.HOST ?? "0.0.0.0";
+const PORT = Number.parseInt(process.env.PORT ?? 3003);
 
 await app.listen({ host: HOST, port: PORT });
