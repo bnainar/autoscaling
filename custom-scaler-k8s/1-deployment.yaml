@@ -36,8 +36,8 @@ spec:
               port: 3003
             initialDelaySeconds: 10
             periodSeconds: 10
-          # envFrom:
-          # - configMapRef:
-          #     name: custom-scaler-config
+          envFrom:
+          - configMapRef:
+              name: custom-scaler-config
   strategy:
     type: RollingUpdate

@@ -70,7 +70,27 @@ initQueues();
 const HOST = process.env.HOST ?? "0.0.0.0";
 const PORT = Number.parseInt(process.env.PORT ?? 3000);
 
-const app = fastify({ logger: true });
+const app = fastify({ logger: true })
+
+const fibonacci = (num) => {
+  if (num <= 1) return 1;
+  return fibonacci(num - 1) + fibonacci(num - 2);
+};
+
+app.get("/cpu/:num", (req, res) => {
+  const { num } = req.params;
+  let _num = Number(num)
+  console.log("fibonacci of " + _num);
+  fibonacci(_num);
+  res.send("Fibonacci Sequence");
+});
+
+app.get("/memory", (req, res) => {
+  console.log("Creating a humongous array")
+  var arr = new Array(20000000).fill(0);
+  var t = arr;
+  res.send(t);
+});
 
 app.get("/api/bullmq/:queueName/concurrency", async (request, res) => {
   const { queueName } = request.params;
