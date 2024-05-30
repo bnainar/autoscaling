@@ -1,0 +1,15 @@
+{
+  "TARGET_APP_LABEL": "sample-app",
+  "K8S_NAMESPACE": "sparrowdesk",
+  "MAX_HPA": 6,
+  "QUEUE_LIMITS": {
+    "{SubmissionSync}": {
+      "podMax": 5,
+      "globalMax": 12,
+      "incStep": 2,
+      "decStep": 2
+    }
+  },
+  "targetPodPort": 3002,
+  "HPA-name": "sample-app-hpa"
+}

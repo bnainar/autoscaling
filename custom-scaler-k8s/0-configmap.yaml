@@ -11,5 +11,7 @@ data:
       "MAX_HPA": 6,
       "QUEUE_LIMITS": {"{SubmissionSync}": {"podMax": 5, "globalMax": 12, "incStep": 2, "decStep": 2}},
       "targetPodPort": 3002,
-      "HPA-name": "sample-app-hpa"
+      "HPA-name": "sample-app-hpa",
+      "cpuThreshold": 15,
+      "memoryThreshold": 40
     }
