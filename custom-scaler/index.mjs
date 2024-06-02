@@ -99,7 +99,6 @@ async function fetchEligiblePods(queueName) {
       cpuThreshold,
       memoryThreshold
     );
-    console.log("filteredPods", filteredPods);
 
     let globalConcurrency = 0;
     const res = [];

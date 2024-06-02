@@ -1,0 +1,36 @@
+serverFiles:
+  alerting_rules.yml:
+    groups:
+    - name: bullmq_alerts
+      rules:
+      - alert: HighWaitingJobs
+        expr: bullmq_waiting_total > 10
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          summary: "High number of waiting jobs in queue {{ $labels.queue }}"
+          description: "The queue {{ $labels.queue }} has {{ $value }} waiting jobs."
+
+extraScrapeConfigs: |
+  - job_name: 'prometheus-sparrowdesk-bullmq'
+    metrics_path: /metrics
+    scrape_interval: 10s
+    static_configs:
+      - targets:
+        - sparrowdesk-bullmq-metrics-svc.sparrowdesk.svc.cluster.local:3000
+        
+alertmanager:
+  config: 
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: discord
+      group_by: ['alertname', 'queue']  # Add 'queue' here to ensure separate alerts per queue
+      group_wait: 10s
+      group_interval: 10s
+      repeat_interval: 10s
+    receivers:
+    - name: discord
+      discord_configs:
+      - webhook_url: 'https://discord.com/api/webhooks/1246468786500927519/HwE6FPdV1y0UyPUvMiT9eS2BItnvjzZL5jtC9e2aqz8KVD2yXOXTHKxVcyfnfJsn7o8W'
