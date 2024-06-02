@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: sample-app
+  name: custom-scaler-svc
   namespace: sparrowdesk
 spec:
   selector:
-    app: sample-app
+    app: custom-scaler
   ports:
     - protocol: TCP
-      port: 80
-      targetPort: 3002
-  type: LoadBalancer
+      port: 3003
+      targetPort: 3003
+  type: ClusterIP

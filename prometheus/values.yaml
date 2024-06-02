@@ -1,16 +1,21 @@
+server:
+  global:
+    scrape_interval: 10s
+    evaluation_interval: 10s
+
 serverFiles:
   alerting_rules.yml:
     groups:
-    - name: bullmq_alerts
-      rules:
-      - alert: HighWaitingJobs
-        expr: bullmq_waiting_total > 10
-        for: 10s
-        labels:
-          severity: critical
-        annotations:
-          summary: "High number of waiting jobs in queue {{ $labels.queue }}"
-          description: "The queue {{ $labels.queue }} has {{ $value }} waiting jobs."
+      - name: bullmq_alerts
+        rules:
+          - alert: HighWaitingJobs
+            expr: bullmq_waiting_total > 10
+            for: 10s
+            labels:
+              severity: critical
+            annotations:
+              summary: "High number of waiting jobs in queue {{ $labels.queue }}"
+              description: "The queue {{ $labels.queue }} has {{ $value }} waiting jobs."
 
 extraScrapeConfigs: |
   - job_name: 'prometheus-sparrowdesk-bullmq'
@@ -19,18 +24,48 @@ extraScrapeConfigs: |
     static_configs:
       - targets:
         - sparrowdesk-bullmq-metrics-svc.sparrowdesk.svc.cluster.local:3000
-        
+
 alertmanager:
-  config: 
+  config:
     global:
       resolve_timeout: 5m
     route:
-      receiver: discord
-      group_by: ['alertname', 'queue']  # Add 'queue' here to ensure separate alerts per queue
-      group_wait: 10s
+      receiver: webhook
+      group_by: ["alertname", "queue"]
+      group_wait: 5s
       group_interval: 10s
-      repeat_interval: 10s
+      repeat_interval: 20s
     receivers:
-    - name: discord
-      discord_configs:
-      - webhook_url: 'https://discord.com/api/webhooks/1246468786500927519/HwE6FPdV1y0UyPUvMiT9eS2BItnvjzZL5jtC9e2aqz8KVD2yXOXTHKxVcyfnfJsn7o8W'
+      - name: webhook
+        webhook_configs:
+          - url: "http://custom-scaler-svc.sparrowdesk.svc.cluster.local:3003/webhook"
+            send_resolved: false
+
+
+          # - url: "https://webhook.site/2ceaa713-12a3-4ebc-af91-96f65c501d2c"
+            # send_resolved: false
+      # - name: slack
+      #   slack_configs:
+      #     - channel: "#alertmanager-test"
+      #       title: |-
+      #         [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }} for {{ .CommonLabels.job }}
+      #         {{- if gt (len .CommonLabels) (len .GroupLabels) -}}
+      #           {{" "}}(
+      #           {{- with .CommonLabels.Remove .GroupLabels.Names }}
+      #             {{- range $index, $label := .SortedPairs -}}
+      #               {{ if $index }}, {{ end }}
+      #               {{- $label.Name }}="{{ $label.Value -}}"
+      #             {{- end }}
+      #           {{- end -}}
+      #           )
+      #         {{- end }}
+      #       text: >-
+      #         {{ range .Alerts -}}
+      #         *Alert:* {{ .Annotations.title }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
+
+      #         *Description:* {{ .Annotations.description }}
+
+      #         *Details:*
+      #           {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+      #           {{ end }}
+      #         {{ end }}

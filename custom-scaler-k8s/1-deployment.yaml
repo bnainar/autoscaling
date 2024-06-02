@@ -28,14 +28,14 @@ spec:
             httpGet:
               path: /status
               port: 3003
-            initialDelaySeconds: 30
-            periodSeconds: 10
+            initialDelaySeconds: 10
+            periodSeconds: 30
           readinessProbe:
             httpGet:
               path: /ready
               port: 3003
             initialDelaySeconds: 10
-            periodSeconds: 10
+            periodSeconds: 30
           volumeMounts:
           - name: config-volume
             mountPath: /app/config

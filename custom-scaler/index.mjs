@@ -208,14 +208,14 @@ app.post("/concurrency/:queueName", async (request, res) => {
   const { target } = request.body;
 
   if (!queueLimits[queueName])
-    return res.code(404).send("Config not set for the desired queue");
+    return res.code(404).send({error: "Config not set for the desired queue"});
 
   const { pods, globalConcurrency } = await fetchEligiblePods(queueName);
 
   const numPods = pods.length;
 
   if (numPods === 0) {
-    return res.status(500).send("No pods available");
+    return res.status(500).send({error: "No pods available"});
   }
 
   let newGlobalConcurrency;
@@ -223,7 +223,7 @@ app.post("/concurrency/:queueName", async (request, res) => {
     newGlobalConcurrency = globalConcurrency - queueLimits[queueName].decStep;
   } else if (target == 1) {
     newGlobalConcurrency = globalConcurrency + queueLimits[queueName].incStep;
-  } else return res.code(400).send("invalid target");
+  } else return res.code(400).send({error: "invalid target"});
 
   const basePodConcurrency = Math.floor(newGlobalConcurrency / numPods);
   let remainder = newGlobalConcurrency % numPods;
@@ -285,6 +285,29 @@ app.post("/concurrency/:queueName", async (request, res) => {
   await Promise.all(promises);
 
   res.send({ newGlobalConcurrency, basePodConcurrency });
+});
+
+app.post('/webhook', async (request, reply) => {
+  const payload = request.body;
+  console.log("webhook recieved", payload.alerts)
+  try {
+    if (payload.status === 'firing') {
+      const response = await app.inject({
+        method: 'POST',
+        url: `/concurrency/{${payload.alerts[0].labels.queue}}`,
+        payload: {target: 1}
+      });
+      return reply.code(response.statusCode).send(response.json());
+    } else if (payload.status === 'resolved') {
+      console.log("why are you here when resolved");
+      return reply.code(200);
+    }  else {
+      return reply.status(400).send({ success: false, message: 'Unknown webhook payload' });
+    }
+  } catch (error) {
+    console.error(error);
+    return reply.status(500).send({ success: false, message: 'Internal Server Error' });
+  }
 });
 
 const HOST = process.env.HOST ?? "0.0.0.0";
