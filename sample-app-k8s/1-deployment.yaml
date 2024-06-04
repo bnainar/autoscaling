@@ -27,7 +27,7 @@ spec:
             httpGet:
               path: /status
               port: 3002
-            initialDelaySeconds: 30
+            initialDelaySeconds: 10
             periodSeconds: 10
           readinessProbe:
             httpGet:

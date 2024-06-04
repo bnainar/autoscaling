@@ -9,18 +9,26 @@ serverFiles:
       - name: bullmq_alerts
         rules:
           - alert: HighWaitingJobs
-            expr: bullmq_waiting_total > 10
+            expr: bullmq_waiting_total > 20
             for: 10s
             labels:
               severity: critical
             annotations:
               summary: "High number of waiting jobs in queue {{ $labels.queue }}"
               description: "The queue {{ $labels.queue }} has {{ $value }} waiting jobs."
+          - alert: LowWaitingJobs
+            expr: bullmq_waiting_total{queue="SubmissionSync"} < 10
+            for: 10s
+            labels:
+              severity: critical
+            annotations:
+              summary: "Low number of waiting jobs in queue {{ $labels.queue }}"
+              description: "The queue {{ $labels.queue }} has {{ $value }} waiting jobs."
 
 extraScrapeConfigs: |
   - job_name: 'prometheus-sparrowdesk-bullmq'
     metrics_path: /metrics
-    scrape_interval: 10s
+    scrape_interval: 6s
     static_configs:
       - targets:
         - sparrowdesk-bullmq-metrics-svc.sparrowdesk.svc.cluster.local:3000

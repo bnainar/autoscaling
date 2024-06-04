@@ -4,7 +4,7 @@ metadata:
   name: laptop-service
 spec:
   type: ExternalName
-  externalName: 192.168.8.29
+  externalName: 10.10.15.2
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -13,8 +13,8 @@ metadata:
   namespace: sparrowdesk
 data:
   QUEUE_NAMES: "AccountLimitCacheToDBCron,AccountLimitSync,AccountMigration,Affliate,AppNestEvents,Billing,Blink,BlinkResync,CaseSync,Cerebrum,CerebrumCron,Cleaner,CleanerCron,CloneClassicToNps,Contact,ContactImport,ContactSync,Custify,CustifyCron,Dashboard,DashboardElasticResponseSync,DashboardResponseSync,Delayed,DelayedCron,Domain,Download,DownloadCron,DropOff,EMP360Reminder,EMP360ReminderCron,EUICacheGenerator,Elastic,ElasticGreenIndexSync,ElasticMigration,ElasticMigrationDispatcher,ElasticMigrationSync,ElasticTriggers,Email,EmailShare,Emp360Report,GoogleSheet,Hierarchy,HierarchyImport,HubSpot,HubSpotCron,Invite,KeyDriver,KeyDriverCron,LLMCostTracker,Log,MailerEvent,Migration,NPSDelayedCron,NPSRelativeScheduleCron,NPSScheduleCron,NpsDelayed,NpsRelativeSchedule,NpsReminder,NpsReminderCron,NpsSchedule,NpsTrigger,OfflineShare,Onboarding,OverageSubscription,OverviewElasticProcessWorker,OverviewElasticSync,ParialSubmissionCorn,PartialSubmission,PartialSubmissionSync,PaymentAnalyticsCron,Phishing,PowerBI,ProcessKeyDriver,Referral,Reminder,ReminderCron,Reports,ReputationAlertsWorker,ResponseEmail,ResponseImport,RuleEngine,RuleEngineProcess,SMS,SMSDeliveryPoller,SSL,Schedule,ScheduleCron,Scheduler,SchedulerCron,Sendgrid,Sentiment,SentimentV3ElasticSync,SentimentV3Migration,Sentiment_v2,Sentiment_v3,SetChurnCron,Share,Standup,StandupCorn,Submission,SubmissionContactPropertiesSync,SubmissionMigration,SubmissionResync,SubmissionSync,SubmissionSyncPoller,SubmissionSyncPollerCron,Subscription,SubscriptionCancellationCron,SuperAdmin,Survey,ThankYou,TicketDueDateProcess,TicketImport,TicketManagementActivityLogs,TopicsExtraction,TopicsExtractionElasticSync,TopicsExtractionSanity,TwilioDelivery,Visit,Vitally,VitallyCron,Webhook,WhatsAppDelivery,Whatsapp,WidgetCacheGenerator,accountTrialFeatureDelete,inboundEmail,translation"
-  REDIS_NODES: '[{ "host": "192.168.8.29", "port": "6375"}, { "host": "192.168.8.29", "port": "6380"}, { "host": "192.168.8.29", "port": "6381" }]'
+  REDIS_NODES: '[{ "host": "10.10.15.2", "port": "6375"}, { "host": "10.10.15.2", "port": "6380"}, { "host": "10.10.15.2", "port": "6381" }]'
   BULLMQ_PREFIX: "bullmq"
-  LAPTOP: "192.168.8.29"
+  LAPTOP: "10.10.15.2"
   # change above often or face slot refresh failed error
   PORT: "3002"

@@ -8,8 +8,25 @@ data:
     {
       "TARGET_APP_LABEL": "sample-app",
       "K8S_NAMESPACE": "sparrowdesk",
-      "MAX_HPA": 6,
-      "QUEUE_LIMITS": {"{SubmissionSync}": {"podMax": 5, "globalMax": 12, "incStep": 2, "decStep": 2}},
+      "MAX_HPA": 3,
+      "laptop": "10.10.15.2",
+      "QUEUE_LIMITS": {
+        "{SubmissionSync}": {"podMax": 5, "podMin": 2, "globalMax": 12, "incStep": 2, "decStep": 2},
+        "{RuleEngine}": {"podMax": 5, "podMin": 2, "globalMax": 12, "incStep": 2, "decStep": 2}
+      },
+      "redis": {
+        "prefix": "default_layer",
+        "nodes": [{ "host": "10.10.15.2", "port": "6375"}, { "host": "10.10.15.2", "port": "6380"}, { "host": "10.10.15.2", "port": "6381" }],
+        "options": {
+          "enableReadyCheck": true,
+          "maxRedirections": 16,
+          "retryDelayOnFailOver": 2000,
+          "redisOptions": {
+            "connectTimeout": 100000
+          }
+        }
+      },
+      "evaluation_period": 20000,
       "targetPodPort": 3002,
       "HPA-name": "sample-app-hpa",
       "cpuThreshold": 90,
