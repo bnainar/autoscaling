@@ -11,8 +11,9 @@ data:
       "MAX_HPA": 3,
       "laptop": "10.10.15.2",
       "QUEUE_LIMITS": {
-        "{SubmissionSync}": {"podMax": 5, "podMin": 2, "globalMax": 12, "incStep": 2, "decStep": 2},
-        "{RuleEngine}": {"podMax": 5, "podMin": 2, "globalMax": 12, "incStep": 2, "decStep": 2}
+        "SubmissionSync": {"podMax": 5, "podMin": 2, "globalMax": 12, "incStep": 2, "decStep": 2},
+        "RuleEngine": {"podMax": 5, "podMin": 2, "globalMax": 12, "incStep": 2, "decStep": 2},
+        "default": {"podMax": 5, "podMin": 1, "globalMax": 12, "incStep": 2, "decStep": 2}
       },
       "redis": {
         "prefix": "default_layer",
@@ -30,5 +31,18 @@ data:
       "targetPodPort": 3002,
       "HPA-name": "sample-app-hpa",
       "cpuThreshold": 90,
-      "memoryThreshold": 90
+      "memoryThreshold": 90,
+      "actualsqs": {
+        "accessKeyId": "ASIA2MNKRQKYRMQ7RQ7O", 
+        "secretAccessKey": "ytTRuGznOU4hxlIsq2j+5qhEfCp9QCjL08vl2v5L",
+        "sessionToken": "IQoJb3JpZ2luX2VjEGEaCXVzLWVhc3QtMSJIMEYCIQCSJweX2MH1p1hwvBNFJNss/Iwz0f9F9iO8hjfWYogNIgIhAKRpY1f0+qN6ESJROys2wo5xb1z+kfZFc5laKm1+4FvvKqgDCOr//////////wEQARoMNzEzODU5MTA1NDU3IgwFyDZN0wKfSJmyYnYq/AKbh8xaOQjjusMuASJzx7XqTErlMDKdgu5+klq8bjO8Itt9DqLng1fHZy2OcfzC2QuAleB7iydlYnahMzpBOs6O9rDMBvveBDyGpfld0eSgXnxoPuZ252XeBPYgMMRcxai19lziPRnKIZ2aJLpa7Idd+dtUESr/RHKJQewysBdBBzloy2Lq5N+jwlL8UYAiw5dYl/JFSsRo1ljXcd7908W5JHH2Y1qhsy9Vw5LcM0P8lFHTYMpRSqd51Zm0N9eaOCLb1ru+sElqYsUNr5xfCd2scklQ+nmVCHKrOaDejpAL75fRN+7RHpz23sCt5unkJF8947PTAHVrujp9A/og2Uwkto7e55lxzELoUnvKt0/YlrH09q72cSxd4D/up+7VDd4Nb8B9DhF71eV32g8oScxGq9PNoLHEAQwS+Ush0vewxLm9pVpiZjJjIlNRpypC0wFJ2hDJT7JHjCuT/AhRDscrAvnit1Kj2ds228d6mUIxXQD3gB3HfaKqaZvIfzCBlouzBjqlAfEvm41EpJQ06Bhoptj/CcjPMq95CUeJZI1wjqbNzrQXQ9t66C/UXCkzsEb3cuLohPwCQ2BVmE10vPNwpgw+ALj9cLGJ29ZagsjD5B2uMCf3jvhb3V1++45AOKg+VALAKd3UUpmE/8FbaTzLz+RKL2lTW+k/474kOxcueOgGRpAoai4qFxzjHSz0oP6Th9wlZX4fV9d1+n/VG+QezVHGSHIS5Aofig==",
+        "queueName": "https://sqs.us-east-1.amazonaws.com/713859105457/bullmq-queue-scaling-aggregation-test"
+      },
+      "sqs": {
+        "accessKeyId": "ASIA2MNKRQKYRMQ7RQ7O", 
+        "secretAccessKey": "ytTRuGznOU4hxlIsq2j+5qhEfCp9QCjL08vl2v5L",
+        "sessionToken": "IQoJb3JpZ2luX2VjEGEaCXVzLWVhc3QtMSJIMEYCIQCSJweX2MH1p1hwvBNFJNss/Iwz0f9F9iO8hjfWYogNIgIhAKRpY1f0+qN6ESJROys2wo5xb1z+kfZFc5laKm1+4FvvKqgDCOr//////////wEQARoMNzEzODU5MTA1NDU3IgwFyDZN0wKfSJmyYnYq/AKbh8xaOQjjusMuASJzx7XqTErlMDKdgu5+klq8bjO8Itt9DqLng1fHZy2OcfzC2QuAleB7iydlYnahMzpBOs6O9rDMBvveBDyGpfld0eSgXnxoPuZ252XeBPYgMMRcxai19lziPRnKIZ2aJLpa7Idd+dtUESr/RHKJQewysBdBBzloy2Lq5N+jwlL8UYAiw5dYl/JFSsRo1ljXcd7908W5JHH2Y1qhsy9Vw5LcM0P8lFHTYMpRSqd51Zm0N9eaOCLb1ru+sElqYsUNr5xfCd2scklQ+nmVCHKrOaDejpAL75fRN+7RHpz23sCt5unkJF8947PTAHVrujp9A/og2Uwkto7e55lxzELoUnvKt0/YlrH09q72cSxd4D/up+7VDd4Nb8B9DhF71eV32g8oScxGq9PNoLHEAQwS+Ush0vewxLm9pVpiZjJjIlNRpypC0wFJ2hDJT7JHjCuT/AhRDscrAvnit1Kj2ds228d6mUIxXQD3gB3HfaKqaZvIfzCBlouzBjqlAfEvm41EpJQ06Bhoptj/CcjPMq95CUeJZI1wjqbNzrQXQ9t66C/UXCkzsEb3cuLohPwCQ2BVmE10vPNwpgw+ALj9cLGJ29ZagsjD5B2uMCf3jvhb3V1++45AOKg+VALAKd3UUpmE/8FbaTzLz+RKL2lTW+k/474kOxcueOgGRpAoai4qFxzjHSz0oP6Th9wlZX4fV9d1+n/VG+QezVHGSHIS5Aofig==",
+        "queueName": "http://10.10.15.2:9324/queue/bullmq-queue-scaling-aggregation-test"
+      },
+      "highPriorityQueues": ["SubmissionSync"]
     }

@@ -17,7 +17,7 @@ serverFiles:
               summary: "High number of waiting jobs in queue {{ $labels.queue }}"
               description: "The queue {{ $labels.queue }} has {{ $value }} waiting jobs."
           - alert: LowWaitingJobs
-            expr: bullmq_waiting_total{queue="SubmissionSync"} < 10
+            expr: bullmq_waiting_total{queue="SubmissionSync"} < 10 or bullmq_waiting_total{queue="RuleEngine"} < 10
             for: 10s
             labels:
               severity: critical

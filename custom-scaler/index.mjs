@@ -1,13 +1,13 @@
 import process from "node:process";
-// import fs from "node:fs/promises";
 import k8s from "@kubernetes/client-node";
 import axios from "axios";
 import config from "config";
 import { fetchEligiblePods } from "./fetchEligiblePods.mjs";
-import { addJob } from "./aggregation_queue.mjs";
+// import { addJob } from "./aggregation_queue.mjs";
 import { app } from "./fastify.mjs";
+import { pushMessage } from "./sqs.mjs";
 
-console.log(config.get("redis.nodes"));
+// console.log(config.get("redis.nodes"));
 
 const kc = new k8s.KubeConfig();
 kc.loadFromDefault();
@@ -25,7 +25,6 @@ app.get("/ready", (_, res) => {
 
 app.post("/api/hpa", async (request, res) => {
   const { target } = request.body;
-  console.log("mamma mia");
   const namespace = config.get("K8S_NAMESPACE");
   const k8sAutoScalingClient = kc.makeApiClient(k8s.AutoscalingV2Api);
 
@@ -90,11 +89,7 @@ const queueLimits = config.get("QUEUE_LIMITS");
 app.post("/concurrency/:queueName", async (request, res) => {
   const { queueName } = request.params;
   const { target } = request.body;
-
-  if (!queueLimits[queueName]) {
-    console.log(`Config not set for the ${queueName}`);
-    return res.code(404).send({ error: `Config not set for the ${queueName}` });
-  }
+  const currentQueueLimits = queueLimits[queueName] ?? queueLimits["default"];
 
   const { pods, globalConcurrency } = await fetchEligiblePods(queueName);
 
@@ -107,9 +102,9 @@ app.post("/concurrency/:queueName", async (request, res) => {
 
   let newGlobalConcurrency;
   if (target == -1) {
-    newGlobalConcurrency = globalConcurrency - queueLimits[queueName].decStep;
+    newGlobalConcurrency = globalConcurrency - currentQueueLimits.decStep;
   } else if (target == 1) {
-    newGlobalConcurrency = globalConcurrency + queueLimits[queueName].incStep;
+    newGlobalConcurrency = globalConcurrency + currentQueueLimits.incStep;
   } else {
     console.log("invalid concurrency target");
     return res.code(400).send({ error: "invalid target" });
@@ -120,20 +115,21 @@ app.post("/concurrency/:queueName", async (request, res) => {
   console.log({ newGlobalConcurrency, basePodConcurrency, remainder });
 
   let errorMsg;
-  // if (target == 1 && newGlobalConcurrency > queueLimits[queueName].globalMax) {
+  // if (target == 1 && newGlobalConcurrency > currentQueueLimits.globalMax) {
   //   errorMsg = "Global max reached " + newGlobalConcurrency;
   // }
 
-  if (target == 1 && basePodConcurrency >= queueLimits[queueName].podMax) {
+  if (target == 1 && basePodConcurrency > currentQueueLimits.podMax) {
     errorMsg = { error: "Pod max reached " + basePodConcurrency, type: "INC" };
   }
 
-  if (target == -1 && basePodConcurrency <= queueLimits[queueName].podMin) {
+  if (target == -1 && basePodConcurrency < currentQueueLimits.podMin) {
     errorMsg = { error: "Pod min reached " + basePodConcurrency, type: "DEC" };
   }
   if (errorMsg?.type) {
-    addJob({ queueName, type: errorMsg.type });
-    return res.code(400).send();
+    // addJob({ queueName, type: errorMsg.type });
+    pushMessage(queueName.replace(/[{}]/g, "") + "," + errorMsg.type);
+    return res.code(400).send(errorMsg);
   }
 
   /**
@@ -146,7 +142,7 @@ app.post("/concurrency/:queueName", async (request, res) => {
       const { data } = await axios.post(
         `http://${pod.podIP}:${config.get(
           "targetPodPort"
-        )}/api/bullmq/${queueName}/concurrency`,
+        )}/api/workers/${queueName}/concurrency`,
         { target: adjustment }
       );
       console.log(`adjusted ${pod.name} concurrency by ${adjustment}`, data);
@@ -186,7 +182,7 @@ app.post("/concurrency/:queueName", async (request, res) => {
 
 app.post("/webhook", async (request, reply) => {
   const payload = request.body;
-  console.log("webhook recieved", payload.alerts);
+  console.log("webhook recieved", payload.alerts[0]?.labels);
   try {
     if (payload.status === "firing") {
       let abs = 0;
@@ -197,14 +193,14 @@ app.post("/webhook", async (request, reply) => {
       const promises = payload.alerts.map(async (alert) => {
         await app.inject({
           method: "POST",
-          url: `/concurrency/{${alert.labels.queue}}`,
+          url: `/concurrency/${alert.labels.queue}`,
           payload: { target: abs > 0 ? 1 : -1 },
         });
       });
       await Promise.all(promises);
       return reply.code(200);
     } else if (payload.status === "resolved") {
-      console.log("why are you here when resolved");
+      console.log("resolved alerts should be turned off");
       return reply.code(200);
     } else {
       return reply

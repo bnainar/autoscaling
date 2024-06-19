@@ -1,6 +1,7 @@
 {
   "main": "index.mjs",
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.592.0",
     "@kubernetes/client-node": "^0.21.0",
     "axios": "^1.7.2",
     "bullmq": "^5.7.11",

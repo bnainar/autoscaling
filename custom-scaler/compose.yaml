@@ -1,0 +1,8 @@
+services:
+  sqs:
+    image: softwaremill/elasticmq-native
+    volumes:
+      - ./elasticmq.conf:/opt/elasticmq.conf
+    ports:
+      - "9324:9324"
+      - "9325:9325"

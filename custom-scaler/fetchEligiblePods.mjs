@@ -110,7 +110,7 @@ export async function fetchEligiblePods(queueName) {
           const { data } = await axios.get(
             `http://${y.podIP}:${config.get(
               "targetPodPort"
-            )}/api/bullmq/${queueName}/concurrency`
+            )}/api/workers/${queueName}/concurrency`
           );
           y.workerConcurrency = data;
           globalConcurrency += Number(data);

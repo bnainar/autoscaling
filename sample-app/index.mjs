@@ -2,7 +2,7 @@ import Redis from "ioredis";
 import fastify from "fastify";
 import { Queue, MetricsTime, Worker } from "bullmq";
 import config from "config";
-import process from "node:process"
+import process from "node:process";
 
 console.log(JSON.parse(process.env.REDIS_NODES));
 
@@ -40,7 +40,7 @@ async function jobProcessor() {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
   await sleep(2000);
-  console.log("processing job " + process.pid)
+  console.log("processing job " + process.pid);
   return;
 }
 
@@ -55,11 +55,11 @@ const queueNames =
   process.env.QUEUE_NAMES?.split(",") ?? config.get("queueNames");
 
 function initQueues() {
-  queueNames.forEach((name) => {
-    name = `{${name}}`
+  queueNames.forEach((normalName) => {
+    const name = `{${normalName}}`;
     const q = new Queue(name, bullmqWorkerOptions);
-    queues[name] = q;
-    workerInstances[name] = [
+    queues[normalName] = q;
+    workerInstances[normalName] = [
       new Worker(name, jobProcessor, bullmqWorkerOptions),
     ];
   });
@@ -70,7 +70,7 @@ initQueues();
 const HOST = process.env.HOST ?? "0.0.0.0";
 const PORT = Number.parseInt(process.env.PORT ?? 3000);
 
-const app = fastify({ logger: true })
+const app = fastify({ logger: true });
 
 const fibonacci = (num) => {
   if (num <= 1) return 1;
@@ -79,27 +79,27 @@ const fibonacci = (num) => {
 
 app.get("/cpu/:num", (req, res) => {
   const { num } = req.params;
-  let _num = Number(num)
+  let _num = Number(num);
   console.log("fibonacci of " + _num);
   fibonacci(_num);
   res.send("Fibonacci Sequence");
 });
 
 app.get("/memory", (req, res) => {
-  console.log("Creating a humongous array")
+  console.log("Creating a humongous array");
   var arr = new Array(20000000).fill(0);
   var t = arr;
   res.send(t);
 });
 
-app.get("/api/bullmq/:queueName/concurrency", async (request, res) => {
+app.get("/api/workers/:queueName/concurrency", async (request, res) => {
   const { queueName } = request.params;
   let ans = 0;
-  workerInstances[queueName].forEach(curr => ans += curr.opts.concurrency)
+  workerInstances[queueName].forEach((curr) => (ans += curr.opts.concurrency));
   res.send(ans);
 });
 
-app.post("/api/bullmq/:queueName/concurrency", async (request, res) => {
+app.post("/api/workers/:queueName/concurrency", async (request, res) => {
   const { target } = request.body;
   const { queueName } = request.params;
   if (target === -1) {
@@ -120,7 +120,7 @@ app.post("/api/bullmq/:queueName/concurrency", async (request, res) => {
   } else {
     console.log("registering a processor");
     workerInstances[queueName].push(
-      new Worker(queueName, jobProcessor, bullmqWorkerOptions)
+      new Worker(`{${queueName}}`, jobProcessor, bullmqWorkerOptions)
     );
     return res.send(
       `Added a worker. Workers count now: ${workerInstances[queueName].length}`
@@ -128,7 +128,7 @@ app.post("/api/bullmq/:queueName/concurrency", async (request, res) => {
   }
 });
 
-app.post("/api/bullmq/:queueName/seed", async (request, res) => {
+app.post("/api/workers/:queueName/seed", async (request, res) => {
   const { target } = request.body;
   const { queueName } = request.params;
   for (let i = 0; i < target; i++) queues[queueName].add("yeah", {});
@@ -143,10 +143,14 @@ app.get("/ready", (_, res) => {
   connection.status === "ready" ? res.code(200).send() : res.code(500).send();
 });
 
-app.get("/api/bullmq/:queueName/status", async (request, res) => {
+app.get("/api/workers/:queueName/status", async (request, res) => {
   const { queueName } = request.params;
   const q = queues[queueName];
-  const x = await Promise.all([q.getWaitingCount(), q.getActiveCount(), q.getWorkersCount()])
+  const x = await Promise.all([
+    q.getWaitingCount(),
+    q.getActiveCount(),
+    q.getWorkersCount(),
+  ]);
   res.send(x);
 });
 
